@@ -23,13 +23,24 @@ const rwClient = client.readWrite;
 
   const now = new Date();
   const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const currentMinutes = jst.getUTCHours() * 60 + jst.getUTCMinutes();
+
+  // ツイートのtime文字列("08:10")を分に変換するヘルパー
+  const toMinutes = (timeStr) => {
+    const [hh, mm] = timeStr.split(":").map(Number);
+    return hh * 60 + mm;
+  };
+
+  // ±10分以内 かつ 未投稿のものを候補にする
+  const TOLERANCE = 10;
+  const candidate = tweets.find(t =>
+    Math.abs(toMinutes(t.time) - currentMinutes) <= TOLERANCE &&
+    !posted.includes(String(t.id))
+  );
+
   const hh = String(jst.getUTCHours()).padStart(2, "0");
   const mm = String(jst.getUTCMinutes()).padStart(2, "0");
   const currentTime = `${hh}:${mm}`;
-
-  const candidate = tweets.find(t =>
-    t.time === currentTime && !posted.includes(String(t.id))
-  );
 
   if (!candidate) {
     console.log("投稿対象なし:", currentTime);
