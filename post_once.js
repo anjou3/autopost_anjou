@@ -6,12 +6,7 @@ const path = require("path");
 const TWEETS_FILE = path.join(__dirname, "tweets.json");
 const LOG_FILE    = path.join(__dirname, "posted.log");
 
-const client = new TwitterApi({
-  appKey:       process.env.API_KEY,
-  appSecret:    process.env.API_SECRET,
-  accessToken:  process.env.ACCESS_TOKEN,
-  accessSecret: process.env.ACCESS_TOKEN_SECRET,
-});
+const client = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
 
 const rwClient = client.readWrite;
 
