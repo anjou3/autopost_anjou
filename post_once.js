@@ -11,7 +11,7 @@ const client = new TwitterApi({
   appSecret:    process.env.API_SECRET,
   accessToken:  process.env.ACCESS_TOKEN,
   accessSecret: process.env.ACCESS_TOKEN_SECRET,
-});
+}).v2;
 
 const rwClient = client.readWrite;
 
