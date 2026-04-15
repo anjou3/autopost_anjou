@@ -2,6 +2,6 @@
 {
 "id": 999,
 "time": "now",
-"content": "これはGitHub Actionsからのテスト投稿です！ " + new Date().toLocaleString('ja-JP')
+"content": "これはGitHub Actionsからのテスト投稿です！ "
 }
 ]
