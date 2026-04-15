@@ -7,13 +7,14 @@ const TWEETS_FILE = path.join(__dirname, "tweets.json");
 const LOG_FILE    = path.join(__dirname, "posted.log");
 
 const client = new TwitterApi({
-  appKey:       process.env.API_KEY,
-  appSecret:    process.env.API_SECRET,
+  appKey:      process.env.API_KEY,
+  appSecret:   process.env.API_SECRET,
   accessToken:  process.env.ACCESS_TOKEN,
   accessSecret: process.env.ACCESS_TOKEN_SECRET,
-}).v2;
+});
 
-const rwClient = client.readWrite;
+// 1. ここで「v2の書き込み権限を持つクライアント」を定義します
+const rwClient = client.readWrite.v2; 
 
 (async () => {
   const tweets = JSON.parse(fs.readFileSync(TWEETS_FILE, "utf8"));
@@ -41,7 +42,9 @@ const rwClient = client.readWrite;
     process.exit(0);
   }
 
-  await rwClient.v2.tweet(candidate.content);
+  // 2. ここで rwClient（v2版）を使ってツイートします
+  await rwClient.tweet(candidate.content); 
+  
   fs.appendFileSync(LOG_FILE, candidate.id + "\n");
   console.log("投稿完了:", candidate.content);
 })();
