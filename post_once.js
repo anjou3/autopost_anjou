@@ -1,58 +1,55 @@
-require("dotenv").config();
-const { TwitterApi } = require("twitter-api-v2");
-const fs = require("fs");
-const path = require("path");
+import { TwitterApi } from "twitter-api-v2";
+import fs from "fs";
+import dotenv from "dotenv";
 
-const TWEETS_FILE = path.join(__dirname, "tweets.json");
-const LOG_FILE    = path.join(__dirname, "posted.log");
+dotenv.config();
 
 const client = new TwitterApi({
-  appKey:       process.env.API_KEY,
-  appSecret:    process.env.API_SECRET,
-  accessToken:  process.env.ACCESS_TOKEN,
-  accessSecret: process.env.ACCESS_TOKEN_SECRET,
+appKey: process.env.API_KEY,
+appSecret: process.env.API_SECRET,
+accessToken: process.env.ACCESS_TOKEN,
+accessSecret: process.env.ACCESS_SECRET,
 });
 
-const rwClient = client.readWrite;
+async function main() {
+try {
+console.log("=== X自動投稿 開始 ===");
 
-(async () => {
-  const tweets = JSON.parse(fs.readFileSync(TWEETS_FILE, "utf8"));
-  const posted = fs.existsSync(LOG_FILE)
-    ? fs.readFileSync(LOG_FILE, "utf8").split("\n").filter(Boolean)
-    : [];
+// tweets.json を正しく読み込む
+const tweetsData = fs.readFileSync("tweets.json", "utf-8");
+const tweets = JSON.parse(tweetsData);
 
-  const now = new Date();
-  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  const currentMinutes = jst.getUTCHours() * 60 + jst.getUTCMinutes();
+if (tweets.length === 0) {
+console.log("tweets.json に投稿内容がありません");
+return;
+}
 
-  // ツイートのtime文字列("08:10")を分に変換するヘルパー
-  const toMinutes = (timeStr) => {
-    const [hh, mm] = timeStr.split(":").map(Number);
-    return hh * 60 + mm;
-  };
+// 最初の投稿を必ず使う（テスト用）
+const tweetText = tweets[0].content;
+console.log("投稿しようとしている内容:");
+console.log(tweetText);
+console.log("---------------------------");
 
-  // ±10分以内 かつ 未投稿のものを候補にする
-  const TOLERANCE = 10;
-  const candidate = tweets.find(t =>
-    Math.abs(toMinutes(t.time) - currentMinutes) <= TOLERANCE &&
-    !posted.includes(String(t.id))
-  );
+// 実際に投稿
+const res = await client.v2.tweet(tweetText);
 
-  const hh = String(jst.getUTCHours()).padStart(2, "0");
-  const mm = String(jst.getUTCMinutes()).padStart(2, "0");
-  const currentTime = `${hh}:${mm}`;
+console.log("✅ 投稿成功！");
+console.log("Tweet ID:", res.data.id);
+console.log("投稿日時:", new Date().toLocaleString("ja-JP"));
 
-  if (!candidate) {
-    console.log("投稿対象なし:", currentTime);
-    process.exit(0);
-  }
+} catch (e) {
+console.error("❌ エラー発生");
+console.error("エラー種類:", e.name || "Unknown");
 
-  if (process.env.TEST_MODE === "true") {
-    console.log("[TEST]", candidate.content);
-    process.exit(0);
-  }
+if (e.code === 403) {
+console.error("403 Forbidden エラーです。Freeプラン制限か権限の問題の可能性が高いです。");
+if (e.data) console.error("詳細:", JSON.stringify(e.data, null, 2));
+} else if (e.code === 401) {
+console.error("401 Unauthorized - 認証情報（API_KEYなど）が間違っている可能性があります。");
+} else {
+console.error("エラー詳細:", e.message || e);
+}
+}
+}
 
-  await rwClient.v2.tweet(candidate.content);
-  fs.appendFileSync(LOG_FILE, candidate.id + "\n");
-  console.log("投稿完了:", candidate.content);
-})();
+main();
